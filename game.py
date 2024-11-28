@@ -1,19 +1,16 @@
 import customtkinter as ctk
 import tkinter
-import time
-# Game class
 
+# Game class
 class Game():
     def __init__(self):
         self.root = ctk.CTk()
         self.board = [["" for _ in range(3)] for _ in range(3)]  # Initialize empty board
-        self.current_player = "X"  # player starts as x
+        self.current_player = "X"  # Human player starts as "X"
         self.check_var = tkinter.StringVar(master=self.root, value="on")
         self.startGui()
 
-    # checkbox func (to check if the player wants to play first)
     def checkbox(self):
-        print("Checkbox toggled, current value:", self.check_var.get())
         if self.check_var.get() == "on":
             self.current_player = "X"
         else:
@@ -46,11 +43,9 @@ class Game():
         self.root.mainloop()
 
     def startGui(self):
-        print("Initializing GUI...")
         self.initGui()
 
     def startGame(self):
-        print("Starting game...")
         self.label_button.place_forget()
         self.start_button.place_forget()
         self.main_title.configure(text="Tic-Tac-Toe (Player vs AI)")
@@ -107,28 +102,21 @@ class Game():
             self.buttons[row][col].configure(text=self.current_player, state="disabled")
 
             if self.checkWin(self.current_player):
-                if self.current_player == "O":
-                    self.gameFinish("AI Wins!")
-                else:
-                    self.gameFinish(f"Player {self.current_player} Wins!")
+                self.gameFinish(f"Player {self.current_player} Wins!")
             elif self.checkDraw():
                 self.gameFinish("It's a Draw!")
             else:
                 self.current_player = "O" if self.current_player == "X" else "X"
                 self.current_turn.configure(text=f"Player {self.current_player}'s Turn")
                 if self.current_player == "O":
-                    self.current_turn.configure(text="AI is thinking... (•_•)")
-                    self.root.update_idletasks()
-                    time.sleep(1)
                     self.aiMove()
 
-
     def aiMove(self):
-        _, move = self.minimax(self.board, True)
+        _, move = self.minimax(self.board, True, float("-inf"), float("inf"))
         if move:
             self.putMark(move[0], move[1])
 
-    def minimax(self, board, is_ai_turn):
+    def minimax(self, board, is_ai_turn, alpha, beta):
         if self.checkWin("O"):
             return 1, None
         if self.checkWin("X"):
@@ -143,14 +131,21 @@ class Game():
             for j in range(3):
                 if board[i][j] == "":
                     board[i][j] = "O" if is_ai_turn else "X"
-                    score, _ = self.minimax(board, not is_ai_turn)
+                    score, _ = self.minimax(board, not is_ai_turn, alpha, beta)
                     board[i][j] = ""
+
                     if is_ai_turn:
                         if score > best_score:
                             best_score, best_move = score, (i, j)
+                        alpha = max(alpha, score)
                     else:
                         if score < best_score:
                             best_score, best_move = score, (i, j)
+                        beta = min(beta, score)
+
+                    # Alpha-Beta Pruning
+                    if beta <= alpha:
+                        break
 
         return best_score, best_move
 
